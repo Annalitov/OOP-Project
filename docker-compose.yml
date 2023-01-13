@@ -5,33 +5,35 @@ services:
         image: rabbitmq:3-management-alpine
         container_name: "rabbitmq"
         ports:
-            - 5672:5672
-            - 15672:15672
+          - 5672:5672
+          - 15672:15672
         hostname: rabbit
+        volumes:
+          - ./rabbitmq/advanced.config:/etc/rabbitmq/advanced.config
         networks:
-            - rabbitmq_network
-        healthcheck:
-          test: [ "CMD", "nc", "-z", "localhost", "5672" ]
-          interval: 5s
-          timeout: 15s
-          retries: 1
-    neironka:
-        build: neironka/
-        command: python3 ./neironka.py
-        depends_on:
-            - rabbit
-        restart: on-failure
-        networks:
-            - rabbitmq_network
+          - rabbitmq_network
+
     bot:
         build: bot/
         command: python3 ./bot.py
         depends_on:
             - rabbit
-            - neironka
         networks:
             - rabbitmq_network
         restart: on-failure
+        environment:
+          AMQP_URL: 'amqp://rabbit?connection_attempts=10&retry_delay=10'
+    neironka:
+        build: neironka/
+        command: python3 ./neironka.py
+        depends_on:
+            - rabbit
+            - bot
+        restart: on-failure
+        networks:
+            - rabbitmq_network
+        environment:
+          AMQP_URL: 'amqp://rabbit?connection_attempts=10&retry_delay=10'
 networks:
     rabbitmq_network:
         driver: bridge
