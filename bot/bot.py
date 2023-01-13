@@ -3,7 +3,7 @@ from telebot import types
 keyboard1 = telebot.types.ReplyKeyboardMarkup()
 keyboard1.row('Получить шутку', 'Закончить')
 
-API_TOKEN = '5867678740:AAG1LP0N37Y9v6vYuXd3nfi-rOTrcLSccOM'
+API_TOKEN = Token
 bot = telebot.TeleBot(API_TOKEN)
 
 @bot.message_handler(commands=['start'])
