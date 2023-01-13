@@ -1,62 +1,3 @@
-# import telebot, pika
-# from telebot import types
-# import os
-# import logging
-
-# amqp_url = os.environ["AMQP_URL"]
-# connection_parameters = pika.URLParameters(amqp_url)
-# keyboard1 = telebot.types.ReplyKeyboardMarkup()
-# keyboard1.row('шутка')
-
-# API_TOKEN = '5867678740:AAG1LP0N37Y9v6vYuXd3nfi-rOTrcLSccOM'
-# bot = telebot.TeleBot(API_TOKEN)
-
-# @bot.message_handler(commands=['start'])
-# def start_message(message):
-#     #name = message.from_user.first_name
-#     #user_full_name = message.from_user.full_name
-#     bot.send_message(message.chat.id, 'Привет, хочешь начать -> нажми на кнопку', reply_markup=keyboard1)
-
-# answer = ''
-# @bot.message_handler(content_types=['text'])
-# def send_text(message):
-#     if message.text =='шутка':
-#         bot.send_message(message.chat.id,'Введите начало шутки' )
-
-#         letters = 'йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ'
-#         prompt = 'Доктор'
-        
-        
-#             #connection_parameters = pika.ConnectionParameters('rabbit')
-
-#         connection = pika.BlockingConnection(connection_parameters)
-        
-#         def on_reply_message_received(ch, method, properties, body):
-#             # ch.stop_consuming()
-#             body_str = body.decode("utf-8")
-#             logging.info(f"Received: {body_str}")
-#             global answer
-#             answer = body_str
-#             logging.info(f"Answer: {answer}")
-        
-#         channel = connection.channel()
-#         channel2 = connection.channel()
-#         channel2.queue_declare(queue='reply-queue')
-#         channel2.basic_consume(queue='reply-queue',
-#                                  on_message_callback=on_reply_message_received)
-#         channel.queue_declare(queue='request-queue')
-        
-#         logging.info(f"Sending Request: {prompt}")
-        
-#         channel.basic_publish('', routing_key='request-queue', body=prompt)
-            
-        
-#         logging.info("Starting Client")
-#         channel2.start_consuming()
-    
-# if __name__ == '__main__':
-#     bot.polling(none_stop=True)
-
 import os
 import json
 
@@ -117,8 +58,13 @@ async def consume():
 
 @dp.message_handler(state='*', commands=['start'])
 async def process_start_command(message: types.Message):
+    await dp.current_state(user=message.from_user.id).set_state('bot_wait_a_joke')
     await message.reply('Введите начало шутки')
-    req = {'chat_id': message.from_user.id, 'text': 'Доктор'}
+
+@dp.message_handler(state=BotStates.BOT_WAIT_A_JOKE)
+async def joke_text(message: types.Message):
+    await message.reply("Шутка в очереди")
+    req = {'chat_id': message.from_user.id, 'text': message.text}
     req = json_serializer(req)
     logging.info(req)
     connection = pika.BlockingConnection(conn_params)
@@ -126,7 +72,6 @@ async def process_start_command(message: types.Message):
     channel.queue_declare(queue='request-queue')
     channel.basic_publish(exchange='', routing_key='request-queue', body=req)
     connection.close()
-    
 
 if __name__ == '__main__':
     loop = asyncio.new_event_loop()
