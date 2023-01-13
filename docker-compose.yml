@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+    rabbit:
+        image: rabbitmq:3-management-alpine
+        container_name: "rabbitmq"
+        ports:
+            - 5672:5672
+            - 15672:15672
+        hostname: rabbit
+        networks:
+            - rabbitmq_network
+        healthcheck:
+          test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+          interval: 5s
+          timeout: 15s
+          retries: 1
+    neironka:
+        build: neironka/
+        command: python3 ./neironka.py
+        depends_on:
+            - rabbit
+        restart: on-failure
+        networks:
+            - rabbitmq_network
+    bot:
+        build: bot/
+        command: python3 ./bot.py
+        depends_on:
+            - rabbit
+            - neironka
+        networks:
+            - rabbitmq_network
+        restart: on-failure
+networks:
+    rabbitmq_network:
+        driver: bridge
