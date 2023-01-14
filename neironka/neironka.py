@@ -56,7 +56,7 @@ trainer = Trainer(
 
 # Пример вероятностного сэмплирвоания с ограничением
 global answer
-#text = 'Доктор'
+
 def generation(model, tokenizer, text): #нужно дописать аргументы функции
     input_ids = tokenizer.encode(text, return_tensors="pt").to(DEVICE)
     model.eval()
